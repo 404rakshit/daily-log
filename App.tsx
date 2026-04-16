@@ -1,25 +1,4 @@
-// import { StatusBar } from 'expo-status-bar';
-// import { StyleSheet, Text, View } from 'react-native';
-
-// export default function App() {
-//   return (
-//     <View style={styles.container}>
-//       <Text>Open up App.tsx to start working on your app!</Text>
-//       <StatusBar style="auto" />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#fff',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-// });
-
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -30,44 +9,27 @@ import {
   StatusBar as RNStatusBar,
   TouchableOpacity,
 } from "react-native";
-import * as Haptics from "expo-haptics";
-import { db, initDb } from "./db";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useLog from "./hooks/useLog";
+
+import { Sun, Moon, Monitor } from "lucide-react-native";
 
 export default function App() {
-  const [logs, setLogs] = useState([]);
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    initDb();
-    refreshLogs();
-  }, []);
-
-  const refreshLogs = () => {
-    const results = db.getAllSync("SELECT * FROM logs ORDER BY id DESC");
-    setLogs(results);
-  };
-
-  const addLog = () => {
-    if (!text.trim()) return;
-    db.runSync("INSERT INTO logs (content) VALUES (?)", text);
-    setText("");
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    refreshLogs();
-  };
+  const { addLog, logs, setText, text, theme, toggleTheme, themeMode } =
+    useLog();
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff", }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: "#fff",
+          backgroundColor: theme.bg,
           paddingTop: Platform.OS === "android" ? RNStatusBar.currentHeight : 0,
         }}
       >
-        <StatusBar style="dark" /> {/* 2. Add this line */}
-        <Text
+        <StatusBar style="auto" /> {/* 2. Add this line */}
+        {/* <Text
           style={{
             fontSize: 24,
             fontWeight: "bold",
@@ -76,7 +38,26 @@ export default function App() {
           }}
         >
           Logs
-        </Text>
+        </Text> */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: 20,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
+            Logs
+          </Text>
+
+          <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
+            {themeMode === "system" && <Monitor size={24} color={theme.text} />}
+            {themeMode === "light" && <Sun size={24} color={theme.text} />}
+            {themeMode === "dark" && <Moon size={24} color={theme.text} />}
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={logs}
           keyExtractor={(item) => item.id.toString()}
@@ -85,16 +66,19 @@ export default function App() {
               style={{
                 padding: 15,
                 borderBottomWidth: 0.5,
-                borderColor: "#eee",
+                borderColor: theme.border,
               }}
             >
-              <Text style={{ color: "#888", fontSize: 12 }}>
+              <Text style={{ color: theme.secondary, fontSize: 12 }}>
                 {new Date(item.timestamp).toLocaleTimeString()}
               </Text>
-              <Text style={{ fontSize: 16, marginTop: 4 }}>{item.content}</Text>
+              <Text style={{ fontSize: 16, marginTop: 4, color: theme.text }}>
+                {item.content}
+              </Text>
             </View>
           )}
         />
+        {/* Input Area */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
@@ -103,17 +87,54 @@ export default function App() {
               padding: 20,
               flexDirection: "row",
               borderTopWidth: 1,
-              borderColor: "#eee",
+              borderColor: theme.border,
+              backgroundColor: theme.bg,
             }}
           >
             <TextInput
               value={text}
               onChangeText={setText}
               placeholder="What happened?"
+              placeholderTextColor={theme.secondary}
               style={{
                 flex: 1,
                 height: 40,
-                backgroundColor: "#f0f0f0",
+                backgroundColor: theme.inputBg,
+                borderRadius: 20,
+                paddingHorizontal: 15,
+                color: theme.text,
+              }}
+            />
+            <TouchableOpacity
+              onPress={addLog}
+              style={{ marginLeft: 15, justifyContent: "center" }}
+            >
+              <Text style={{ color: "#007AFF", fontWeight: "bold" }}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+        {/* <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View
+            style={{
+              padding: 20,
+              flexDirection: "row",
+              borderTopWidth: 1,
+              borderColor: theme.border,
+              backgroundColor: theme.bg,
+            }}
+          >
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="What happened?"
+              placeholderTextColor={theme.secondary}
+              style={{
+                flex: 1,
+                height: 40,
+                backgroundColor: theme.inputBg,
+                color: theme.text,
                 borderRadius: 20,
                 paddingHorizontal: 15,
               }}
@@ -125,7 +146,7 @@ export default function App() {
               <Text style={{ color: "#007AFF", fontWeight: "bold" }}>Save</Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView> */}
       </SafeAreaView>
     </View>
   );
