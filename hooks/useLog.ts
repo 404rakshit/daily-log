@@ -1,6 +1,6 @@
-import { useColorScheme } from "react-native";
+import { SectionList, useColorScheme } from "react-native";
 import { Themes } from "../constants/theme";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { db, initDb } from "../db";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -57,9 +57,27 @@ export default function useLog() {
     refreshLogs();
   };
 
+  const handleAddLog = () => {
+    addLog();
+    // Use a tiny timeout to ensure the list has updated before scrolling
+    setTimeout(() => scrollToTop(), 100);
+  };
+
   const sectionedLogs = groupLogsByDay(logs);
 
   const isDarkThemed = activeScheme === "dark" ? "light" : "dark";
+
+  const sectionListRef = useRef<SectionList>(null);
+
+  const scrollToTop = () => {
+    if (sectionedLogs.length > 0 && sectionedLogs[0].data.length > 0) {
+      sectionListRef.current?.scrollToLocation({
+        sectionIndex: 0,
+        itemIndex: 0,
+        animated: true,
+      });
+    }
+  };
 
   return {
     theme,
@@ -71,11 +89,12 @@ export default function useLog() {
     setThemeMode,
     toggleTheme,
 
-    addLog,
+    handleAddLog,
     refreshLogs,
     activeScheme,
 
     sectionedLogs,
+    sectionListRef,
 
     logs,
     setLogs,

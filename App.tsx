@@ -18,7 +18,7 @@ import { Sun, Moon, Monitor } from "lucide-react-native";
 
 export default function App() {
   const {
-    addLog,
+    handleAddLog,
     setText,
     text,
     theme,
@@ -26,6 +26,7 @@ export default function App() {
     themeMode,
     activeScheme,
     sectionedLogs,
+    sectionListRef,
   } = useLog();
 
   return (
@@ -66,6 +67,7 @@ export default function App() {
             </TouchableOpacity>
           </View>
           <SectionList
+            ref={sectionListRef}
             sections={sectionedLogs}
             keyExtractor={(item) => item.id.toString()}
             stickySectionHeadersEnabled={true} // Keeps the day title at the top as you scroll
@@ -124,9 +126,12 @@ export default function App() {
           >
             <TextInput
               value={text}
+              multiline={true}
+              numberOfLines={4}
               onChangeText={setText}
               placeholder="What happened?"
               placeholderTextColor={theme.secondary}
+              textAlignVertical="top" // Ensures text starts at the top on Android
               style={{
                 flex: 1,
                 height: 40,
@@ -137,7 +142,7 @@ export default function App() {
               }}
             />
             <TouchableOpacity
-              onPress={addLog}
+              onPress={handleAddLog}
               style={{ marginLeft: 15, justifyContent: "center" }}
             >
               <Text style={{ color: "#007AFF", fontWeight: "bold" }}>Save</Text>
