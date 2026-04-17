@@ -44,10 +44,10 @@ export default function useLog() {
     await AsyncStorage.setItem("@theme_mode", mode);
   };
 
-  const refreshLogs = () => {
-    const results = db.getAllSync("SELECT * FROM logs ORDER BY id DESC");
-    setLogs(results);
-  };
+  // const refreshLogs = () => {
+  //   const results = db.getAllSync("SELECT * FROM logs ORDER BY id DESC");
+  //   setLogs(results);
+  // };
 
   const deleteLog = (id: number) => {
     db.runSync("DELETE FROM logs WHERE id = ?", [id]);
@@ -73,11 +73,11 @@ export default function useLog() {
     refreshLogs();
   };
 
-  const handleAddLog = () => {
-    addLog();
-    // Use a tiny timeout to ensure the list has updated before scrolling
-    setTimeout(() => scrollToTop(), 100);
-  };
+  // const handleAddLog = () => {
+  //   addLog();
+  //   // Use a tiny timeout to ensure the list has updated before scrolling
+  //   setTimeout(() => scrollToTop(), 100);
+  // };
 
   const sectionedLogs = groupLogsByDay(logs);
 
@@ -97,6 +97,43 @@ export default function useLog() {
 
   const isEmpty = logs.length === 0;
 
+  const [dateRange, setDateRange] = useState<{
+    from: string | null;
+    to: string | null;
+  }>({
+    from: null,
+    to: null,
+  });
+
+  const refreshLogs = (filter?: { from: string; to: string }) => {
+    let query = "SELECT * FROM logs";
+    let params: any[] = [];
+
+    if (filter) {
+      // SQLite stores Unix ms, so we convert the YYYY-MM-DD filter to timestamps
+      const start = new Date(filter.from).setHours(0, 0, 0, 0);
+      const end = new Date(filter.to).setHours(23, 59, 59, 999);
+      query += " WHERE timestamp >= ? AND timestamp <= ?";
+      params = [start, end];
+    }
+
+    query += " ORDER BY id DESC";
+    const results = db.getAllSync(query, params);
+    setLogs(results);
+  };
+
+  const clearFilter = () => {
+    setDateRange({ from: null, to: null });
+    refreshLogs();
+  };
+
+  // Update handleAddLog to ensure it clears filter or stays on today
+  const handleAddLog = () => {
+    addLog();
+    if (dateRange.from) clearFilter(); // Optional: reset view to show new log
+    setTimeout(() => scrollToTop(), 100);
+  };
+
   return {
     theme,
     systemScheme,
@@ -112,7 +149,7 @@ export default function useLog() {
     clearAllLogs,
 
     handleAddLog,
-    refreshLogs,
+    // refreshLogs,
     activeScheme,
 
     sectionedLogs,
@@ -122,5 +159,10 @@ export default function useLog() {
     setLogs,
     text,
     setText,
+
+    dateRange,
+    setDateRange,
+    refreshLogs,
+    clearFilter,
   };
 }

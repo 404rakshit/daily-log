@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -16,9 +16,12 @@ import useLog from "./hooks/useLog";
 
 import { Sun, Moon, Monitor, Trash2 } from "lucide-react-native";
 import LogItem from "./components/LogItem";
+import { Calendar as FilterIcon, XCircle } from "lucide-react-native";
 import EmptyState from "./components/EmptyState";
+import { DateFilterModal } from "./components/CalenderPicker";
 
 export default function App() {
+  const [filterVisible, setFilterVisible] = useState(false);
   const {
     handleAddLog,
     setText,
@@ -32,6 +35,10 @@ export default function App() {
     deleteLog,
     clearAllLogs,
     isEmpty,
+    setDateRange,
+    dateRange,
+    refreshLogs,
+    clearFilter,
   } = useLog();
 
   return (
@@ -60,7 +67,7 @@ export default function App() {
             <View
               style={{
                 flexDirection: "row",
-                alignItems: "center"
+                alignItems: "center",
               }}
             >
               <Text
@@ -88,16 +95,65 @@ export default function App() {
                 <Trash2 size={22} color="#da554e" />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
-              {themeMode === "system" && (
-                <Monitor size={24} color={theme.text} />
-              )}
-              {themeMode === "light" && <Sun size={24} color={theme.text} />}
-              {themeMode === "dark" && <Moon size={24} color={theme.text} />}
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={() => setFilterVisible(true)}
+                style={{ padding: 8 }}
+              >
+                <FilterIcon
+                  size={22}
+                  color={dateRange.from ? "#007AFF" : theme.text}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
+                {themeMode === "system" && (
+                  <Monitor size={24} color={theme.text} />
+                )}
+                {themeMode === "light" && <Sun size={24} color={theme.text} />}
+                {themeMode === "dark" && <Moon size={24} color={theme.text} />}
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Active Filter Badge */}
+          {dateRange.from && (
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: theme.inputBg,
+                margin: 10,
+                padding: 8,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: theme.text, fontSize: 12 }}>
+                Showing: {dateRange.from} to {dateRange.to}
+              </Text>
+              <TouchableOpacity
+                onPress={clearFilter}
+                style={{ marginLeft: 10 }}
+              >
+                <XCircle size={16} color="#da554e" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <DateFilterModal
+            visible={filterVisible}
+            theme={theme}
+            onClose={() => setFilterVisible(false)}
+            onApply={(from: string, to: string) => {
+              setDateRange({ from, to });
+              refreshLogs({ from, to });
+            }}
+          />
+
           <SectionList
-            ListEmptyComponent={<EmptyState theme={theme} />}
+            ListEmptyComponent={
+              <EmptyState theme={theme} isFiltering={!!dateRange.from} />
+            }
             contentContainerStyle={isEmpty ? { flex: 1 } : {}}
             ref={sectionListRef}
             sections={sectionedLogs}
