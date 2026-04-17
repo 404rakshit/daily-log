@@ -51,7 +51,11 @@ export default function useLog() {
 
   const addLog = () => {
     if (!text.trim()) return;
-    db.runSync("INSERT INTO logs (content) VALUES (?)", text);
+    // Date.now() gets the exact local milliseconds
+    db.runSync("INSERT INTO logs (content, timestamp) VALUES (?, ?)", [
+      text,
+      Date.now(),
+    ]);
     setText("");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     refreshLogs();
