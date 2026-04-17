@@ -16,8 +16,16 @@ import useLog from "./hooks/useLog";
 import { Sun, Moon, Monitor } from "lucide-react-native";
 
 export default function App() {
-  const { addLog, logs, setText, text, theme, toggleTheme, themeMode } =
-    useLog();
+  const {
+    addLog,
+    logs,
+    setText,
+    text,
+    theme,
+    toggleTheme,
+    themeMode,
+    activeScheme,
+  } = useLog();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -28,7 +36,8 @@ export default function App() {
           paddingTop: Platform.OS === "android" ? RNStatusBar.currentHeight : 0,
         }}
       >
-        <StatusBar style="auto" /> {/* 2. Add this line */}
+        <StatusBar style={activeScheme === "dark" ? "light" : "dark"} />{" "}
+        {/* 2. Add this line */}
         {/* <Text
           style={{
             fontSize: 24,
