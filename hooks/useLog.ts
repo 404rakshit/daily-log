@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { db, initDb } from "../db";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { format, isToday, isYesterday } from "date-fns";
+import { groupLogsByDay } from "../helper/format/date";
 
-type ThemeMode = 'system' | 'light' | 'dark';
+type ThemeMode = "system" | "light" | "dark";
 
 export default function useLog() {
   const systemScheme = useColorScheme(); // 'light' or 'dark'
@@ -33,13 +35,13 @@ export default function useLog() {
   }, []);
 
   const loadTheme = async () => {
-    const savedTheme = await AsyncStorage.getItem('@theme_mode');
+    const savedTheme = await AsyncStorage.getItem("@theme_mode");
     if (savedTheme) setThemeMode(savedTheme as ThemeMode);
   };
 
   const saveTheme = async (mode: ThemeMode) => {
     setThemeMode(mode);
-    await AsyncStorage.setItem('@theme_mode', mode);
+    await AsyncStorage.setItem("@theme_mode", mode);
   };
 
   const refreshLogs = () => {
@@ -54,6 +56,8 @@ export default function useLog() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     refreshLogs();
   };
+
+  const sectionedLogs = groupLogsByDay(logs);
 
   const isDarkThemed = activeScheme === "dark" ? "light" : "dark";
 
@@ -70,6 +74,8 @@ export default function useLog() {
     addLog,
     refreshLogs,
     activeScheme,
+
+    sectionedLogs,
 
     logs,
     setLogs,
