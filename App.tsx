@@ -3,18 +3,20 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   StatusBar as RNStatusBar,
   TouchableOpacity,
   SectionList,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useLog from "./hooks/useLog";
 
-import { Sun, Moon, Monitor } from "lucide-react-native";
+import { Sun, Moon, Monitor, Trash2 } from "lucide-react-native";
+import LogItem from "./components/LogItem";
+import EmptyState from "./components/EmptyState";
 
 export default function App() {
   const {
@@ -27,6 +29,9 @@ export default function App() {
     activeScheme,
     sectionedLogs,
     sectionListRef,
+    deleteLog,
+    clearAllLogs,
+    isEmpty,
   } = useLog();
 
   return (
@@ -52,12 +57,37 @@ export default function App() {
               marginBottom: 10,
             }}
           >
-            <Text
-              style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center"
+              }}
             >
-              Logs
-            </Text>
-
+              <Text
+                style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}
+              >
+                Logs
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Clear All Data",
+                    "This will permanently erase all your logs. This cannot be undone.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Clear Everything",
+                        style: "destructive",
+                        onPress: clearAllLogs,
+                      },
+                    ],
+                  );
+                }}
+                style={{ padding: 8 }}
+              >
+                <Trash2 size={22} color="#da554e" />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
               {themeMode === "system" && (
                 <Monitor size={24} color={theme.text} />
@@ -67,6 +97,8 @@ export default function App() {
             </TouchableOpacity>
           </View>
           <SectionList
+            ListEmptyComponent={<EmptyState theme={theme} />}
+            contentContainerStyle={isEmpty ? { flex: 1 } : {}}
             ref={sectionListRef}
             sections={sectionedLogs}
             keyExtractor={(item) => item.id.toString()}
@@ -93,25 +125,30 @@ export default function App() {
                 </Text>
               </View>
             )}
-            renderItem={({ item }) => (
-              <View
-                style={{
-                  padding: 15,
-                  borderBottomWidth: 0.5,
-                  borderColor: theme.border,
-                }}
-              >
-                <Text style={{ color: theme.secondary, fontSize: 12 }}>
-                  {new Date(item.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Text>
-                <Text style={{ fontSize: 16, marginTop: 4, color: theme.text }}>
-                  {item.content}
-                </Text>
-              </View>
-            )}
+            renderItem={
+              ({ item }) => (
+                <LogItem deleteLog={deleteLog} item={item} theme={theme} />
+              )
+              //   ({ item }) => (
+              //   <View
+              //     style={{
+              //       padding: 15,
+              //       borderBottomWidth: 0.5,
+              //       borderColor: theme.border,
+              //     }}
+              //   >
+              //     <Text style={{ color: theme.secondary, fontSize: 12 }}>
+              //       {new Date(item.timestamp).toLocaleTimeString([], {
+              //         hour: "2-digit",
+              //         minute: "2-digit",
+              //       })}
+              //     </Text>
+              //     <Text style={{ fontSize: 16, marginTop: 4, color: theme.text }}>
+              //       {item.content}
+              //     </Text>
+              //   </View>
+              // )
+            }
           />
           {/* Input Area */}
 

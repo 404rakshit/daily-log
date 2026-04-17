@@ -49,6 +49,18 @@ export default function useLog() {
     setLogs(results);
   };
 
+  const deleteLog = (id: number) => {
+    db.runSync("DELETE FROM logs WHERE id = ?", [id]);
+    refreshLogs();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const clearAllLogs = () => {
+    db.runSync("DELETE FROM logs");
+    refreshLogs();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  };
+
   const addLog = () => {
     if (!text.trim()) return;
     // Date.now() gets the exact local milliseconds
@@ -83,6 +95,8 @@ export default function useLog() {
     }
   };
 
+  const isEmpty = logs.length === 0;
+
   return {
     theme,
     systemScheme,
@@ -92,6 +106,10 @@ export default function useLog() {
     themeMode,
     setThemeMode,
     toggleTheme,
+
+    isEmpty,
+    deleteLog,
+    clearAllLogs,
 
     handleAddLog,
     refreshLogs,
