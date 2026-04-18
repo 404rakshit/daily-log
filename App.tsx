@@ -230,7 +230,7 @@ export default function App() {
                 height: 40,
                 backgroundColor: theme.inputBg,
                 borderRadius: 20,
-                paddingHorizontal: 15,
+                paddingHorizontal: 20,
                 color: theme.text,
               }}
             />

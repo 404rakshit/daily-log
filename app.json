@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "daily-log",
+    "name": "Daily Log",
     "package": "com.deliberate.dailylog",
     "slug": "daily-log",
     "version": "1.0.0",
@@ -23,11 +23,20 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.deliberate.dailylog"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-sqlite"]
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d96cba68-33fc-4a99-a313-6337e3655342"
+      }
+    },
+    "owner": "deliberate"
   }
 }
