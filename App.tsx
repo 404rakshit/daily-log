@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   SectionList,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Onboarding, { ONBOARDING_KEY } from "./components/Onboarding";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useLog from "./hooks/useLog";
@@ -23,7 +25,14 @@ import { DateFilterModal } from "./components/CalenderPicker";
 import * as Clarity from "@microsoft/react-native-clarity";
 
 export default function App() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
+      if (!val) setShowOnboarding(true);
+    });
+  }, []);
   const {
     handleAddLog,
     setText,
@@ -49,6 +58,9 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      {/* {showOnboarding && (
+        <Onboarding onDone={() => setShowOnboarding(false)} />
+      )} */}
       <SafeAreaView
         style={{
           flex: 1,
