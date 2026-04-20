@@ -20,6 +20,8 @@ import { Calendar as FilterIcon, XCircle } from "lucide-react-native";
 import EmptyState from "./components/EmptyState";
 import { DateFilterModal } from "./components/CalenderPicker";
 
+import * as Clarity from "@microsoft/react-native-clarity";
+
 export default function App() {
   const [filterVisible, setFilterVisible] = useState(false);
   const {
@@ -40,6 +42,10 @@ export default function App() {
     refreshLogs,
     clearFilter,
   } = useLog();
+
+  Clarity.initialize("we8iemyvhx", {
+    logLevel: Clarity.LogLevel.None, // Note: Use "LogLevel.Verbose" value while testing to debug initialization issues.
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
