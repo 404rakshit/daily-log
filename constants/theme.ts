@@ -5,6 +5,7 @@ const Themes = {
     secondary: "#888888",
     inputBg: "#f0f0f0",
     border: "#eeeeee",
+    card: "#ffffff",
   },
   dark: {
     bg: "#121212",
@@ -12,6 +13,7 @@ const Themes = {
     secondary: "#aaaaaa",
     inputBg: "#1e1e1e",
     border: "#333333",
+    card: "#1e1e1e",
   },
 };
 export { Themes };
