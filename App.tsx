@@ -257,7 +257,7 @@ export default function App() {
   const colors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 
   useEffect(() => {
-    // nukeDB()
+    nukeDB()
     initDB();
     loadHabits();
     setIsReady(true);

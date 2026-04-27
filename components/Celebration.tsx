@@ -10,6 +10,7 @@ import Animated, {
   withDelay,
   runOnJS,
 } from "react-native-reanimated";
+import { useAudioPlayer } from "expo-audio";
 import useLogStore from "../store/logState";
 
 import LottieView from "lottie-react-native";
@@ -20,6 +21,8 @@ export const CelebrationOverlay = () => {
   const celebrationEvent = useLogStore((state) => state.celebrationEvent);
   const clearEvent = useLogStore((state) => state.clearEvent);
 
+  const sfxPlayer = useAudioPlayer(require("../assets/mystery-sfx.wav"));
+
   // Animation values
   const bgOpacity = useSharedValue(0);
   const charY = useSharedValue(height / 2 + 200);
@@ -27,6 +30,8 @@ export const CelebrationOverlay = () => {
 
   useEffect(() => {
     if (celebrationEvent) {
+      sfxPlayer.seekTo(0);
+      sfxPlayer.play();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       // --- 1. ENTER PHASE (Softer, loftier entrance) ---
