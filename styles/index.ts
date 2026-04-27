@@ -263,7 +263,7 @@ export const styles = StyleSheet.create({
 
   // COMPLETED SECTION STYLES
   completedSection: {
-    marginTop: 40,
+    marginTop: 20,
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: "#1e293b",
@@ -346,5 +346,112 @@ export const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 4,
     zIndex: 0,
+  },
+
+  // NEW HEADER ROW ALIGNMENT
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  viewToggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#1e293b",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  viewToggleText: {
+    color: "#94a3b8",
+    fontSize: 20,
+  },
+  cardList: {
+    padding: 16,
+    borderTopWidth: 0,
+    borderLeftWidth: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 80,
+  },
+  listInner: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  emojiList: {
+    fontSize: 32,
+  },
+  cardDataList: {
+    flex: 1,
+    gap: 4,
+  },
+  actionRowList: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  // --- 1. SEPARATED WRAPPERS ---
+  cardWrapperGrid: {
+    width: (width - 56) / 2,
+    aspectRatio: 1, // Strictly 1:1 for grid
+  },
+  cardWrapperList: {
+    width: "100%",
+    // NO aspectRatio here. We let the content dictate the height natively.
+  },
+
+  // --- 2. SHARED BASE STYLES ---
+  cardBase: {
+    backgroundColor: "#1e293b",
+    borderRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1,
+  },
+
+  // --- 3. EXPLICIT GRID LAYOUT ---
+  cardGrid: {
+    flex: 1, // Safe to use here because the wrapper has a strict aspectRatio: 1
+    padding: 20,
+    justifyContent: "space-between",
+    borderTopWidth: 4,
+  },
+
+  emptyStateBox: {
+    backgroundColor: "#1e293b",
+    borderRadius: 24,
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#334155",
+    borderStyle: "dashed", // Dashed border gives it a nice "drop zone" or "cleared" vibe
+    marginTop: 16,
+  },
+  emptyStateEmoji: {
+    fontSize: 56,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "900",
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  emptyStateText: {
+    color: "#94a3b8",
+    fontSize: 15,
+    fontWeight: "500",
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
 });

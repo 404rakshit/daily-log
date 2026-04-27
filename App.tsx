@@ -22,11 +22,12 @@ import { Habit } from "./types";
 import useLogStore from "./store/logState";
 import { db, initDB } from "./db";
 import { CelebrationOverlay } from "./components/Celebration";
+import EmptyView from "./components/EmptyView";
 
 // --- 3. UI COMPONENTS ---
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const HabitCard = ({ habit }: { habit: Habit }) => {
+const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
   const { logWin, undoWin, recentlyCompleted } = useLogStore();
   const scale = useSharedValue(1);
 
@@ -68,8 +69,8 @@ const HabitCard = ({ habit }: { habit: Habit }) => {
   const visualBoxesCount = Math.min(habit.daily_target, 10);
 
   return (
-    <View style={styles.cardWrapper}>
-      {/* THE SHOCKWAVE RING (Hidden behind the card) */}
+    <View style={isGrid ? styles.cardWrapperGrid : styles.cardWrapperList}>
+      {/* THE SHOCKWAVE RING */}
       <Animated.View
         style={[styles.pulseRing, { borderColor: habit.color }, pulseStyle]}
         pointerEvents="none"
@@ -88,78 +89,153 @@ const HabitCard = ({ habit }: { habit: Habit }) => {
           if (!isDone) logWin(habit);
         }}
         style={[
-          styles.card,
-          { borderTopColor: habit.color },
-          isDone && !isRecent && styles.cardDone, // Don't dim it while it's celebrating!
+          styles.cardBase, // Shared base styles (colors, shadows, corners)
+          isGrid ? styles.cardGrid : styles.cardList, // Explicit layout split
+          isGrid
+            ? { borderTopColor: habit.color }
+            : { borderLeftColor: habit.color },
+          isDone && !isRecent && styles.cardDone,
         ]}
       >
-        <View style={styles.actionRow}>
-          {showUndo && (
-            <Pressable
-              style={styles.iconBtn}
-              hitSlop={10}
-              onPress={() => undoWin(habit)}
-            >
-              <Text style={styles.undoText}>-</Text>
-            </Pressable>
-          )}
-          <View style={{ flex: 1 }} />
-          {!isDone && (
-            <Pressable
-              style={[styles.iconBtn, styles.addBtn]}
-              hitSlop={10}
-              onPress={() => logWin(habit)}
-            >
-              <Text style={styles.addText}>+</Text>
-            </Pressable>
-          )}
-        </View>
-
-        <Text style={[styles.emoji, isDone && !isRecent && { opacity: 0.5 }]}>
-          {habit.emoji}
-        </Text>
-
-        <View style={styles.cardData}>
-          <Text
-            style={[styles.title, isDone && !isRecent && { color: "#64748b" }]}
-          >
-            {habit.title}
-          </Text>
-
-          {isDone ? (
-            <Text style={[styles.streak, { color: habit.color }]}>
-              ✅ Done (🔥 {habit.streak})
-            </Text>
-          ) : (
-            <View style={styles.progressWrapper}>
-              <View style={styles.pipsContainer}>
-                {Array.from({ length: visualBoxesCount }).map((_, i) => {
-                  const isFilled = i < habit.today_progress;
-                  return (
-                    <View
-                      key={i}
-                      style={[
-                        styles.pip,
-                        isFilled
-                          ? {
-                              backgroundColor: habit.color,
-                              borderColor: habit.color,
-                            }
-                          : { borderColor: "#334155" },
-                      ]}
-                    />
-                  );
-                })}
-                {habit.daily_target > 10 && (
-                  <Text style={styles.pipOverflowText}>+</Text>
-                )}
-              </View>
-              <Text style={styles.smallProgressText}>
-                {habit.today_progress}/{habit.daily_target}
-              </Text>
+        {isGrid ? (
+          // --- GRID VIEW INTERNAL LAYOUT (Keep your existing grid layout here) ---
+          <>
+            <View style={styles.actionRow}>
+              {showUndo && (
+                <Pressable
+                  style={styles.iconBtn}
+                  hitSlop={10}
+                  onPress={() => undoWin(habit)}
+                >
+                  <Text style={styles.undoText}>-</Text>
+                </Pressable>
+              )}
+              <View style={{ flex: 1 }} />
+              {!isDone && (
+                <Pressable
+                  style={[styles.iconBtn, styles.addBtn]}
+                  hitSlop={10}
+                  onPress={() => logWin(habit)}
+                >
+                  <Text style={styles.addText}>+</Text>
+                </Pressable>
+              )}
             </View>
-          )}
-        </View>
+            <Text
+              style={[styles.emoji, isDone && !isRecent && { opacity: 0.5 }]}
+            >
+              {habit.emoji}
+            </Text>
+            <View style={styles.cardData}>
+              <Text
+                style={[
+                  styles.title,
+                  isDone && !isRecent && { color: "#64748b" },
+                ]}
+              >
+                {habit.title}
+              </Text>
+              {isDone ? (
+                <Text style={[styles.streak, { color: habit.color }]}>
+                  ✅ Done (🔥 {habit.streak})
+                </Text>
+              ) : (
+                <View style={styles.progressWrapper}>
+                  <View style={styles.pipsContainer}>
+                    {Array.from({ length: visualBoxesCount }).map((_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.pip,
+                          i < habit.today_progress
+                            ? {
+                                backgroundColor: habit.color,
+                                borderColor: habit.color,
+                              }
+                            : { borderColor: "#334155" },
+                        ]}
+                      />
+                    ))}
+                    {habit.daily_target > 10 && (
+                      <Text style={styles.pipOverflowText}>+</Text>
+                    )}
+                  </View>
+                  <Text style={styles.smallProgressText}>
+                    {habit.today_progress}/{habit.daily_target}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </>
+        ) : (
+          // --- NEW: LIST VIEW INTERNAL LAYOUT ---
+          <View style={styles.listInner}>
+            <Text
+              style={[
+                styles.emojiList,
+                isDone && !isRecent && { opacity: 0.5 },
+              ]}
+            >
+              {habit.emoji}
+            </Text>
+
+            <View style={styles.cardDataList}>
+              <Text
+                style={[
+                  styles.title,
+                  isDone && !isRecent && { color: "#64748b" },
+                ]}
+              >
+                {habit.title}
+              </Text>
+              {isDone ? (
+                <Text style={[styles.streak, { color: habit.color }]}>
+                  ✅ Done (🔥 {habit.streak})
+                </Text>
+              ) : (
+                <View style={styles.progressWrapper}>
+                  <View style={styles.pipsContainer}>
+                    {Array.from({ length: visualBoxesCount }).map((_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.pip,
+                          i < habit.today_progress
+                            ? {
+                                backgroundColor: habit.color,
+                                borderColor: habit.color,
+                              }
+                            : { borderColor: "#334155" },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.actionRowList}>
+              {showUndo && (
+                <Pressable
+                  style={styles.iconBtn}
+                  hitSlop={15}
+                  onPress={() => undoWin(habit)}
+                >
+                  <Text style={styles.undoText}>-</Text>
+                </Pressable>
+              )}
+              {!isDone && (
+                <Pressable
+                  style={[styles.iconBtn, styles.addBtn]}
+                  hitSlop={15}
+                  onPress={() => logWin(habit)}
+                >
+                  <Text style={styles.addText}>+</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
       </AnimatedPressable>
     </View>
   );
@@ -175,6 +251,8 @@ export default function App() {
 
   const { habits, loadHabits, addHabit } = useLogStore();
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(false);
+
+  const [isGrid, setIsGrid] = useState(true);
 
   const colors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 
@@ -235,8 +313,23 @@ export default function App() {
     <View style={styles.container}>
       <CelebrationOverlay />
       <View style={styles.header}>
-        <Text style={styles.dateText}>{today}</Text>
-        <Text style={styles.headerSubtitle}>Today's Log</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.dateText}>{today}</Text>
+            <Text style={styles.headerSubtitle}>Today's Log</Text>
+          </View>
+
+          {/* THE VIEW TOGGLE BUTTON */}
+          <Pressable
+            style={styles.viewToggleBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsGrid(!isGrid);
+            }}
+          >
+            <Text style={styles.viewToggleText}>{isGrid ? "☰" : "▦"}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.summaryBox}>
           <Text style={styles.summaryText}>
@@ -250,21 +343,22 @@ export default function App() {
       </View>
 
       {/* ONGOING SECTION */}
-      <View style={styles.grid}>
-        {ongoingHabits.map((habit) => (
-          <HabitCard key={habit.id} habit={habit} />
-        ))}
-      </View>
+      {ongoingHabits.length === 0 ? (
+        <EmptyView />
+      ) : (
+        <View style={styles.grid}>
+          {ongoingHabits.map((habit) => (
+            <HabitCard key={habit.id} habit={habit} isGrid={isGrid} />
+          ))}
+        </View>
+      )}
 
       {/* COMPLETED COLLAPSIBLE SECTION */}
       {completedHabits.length > 0 && (
         <View style={styles.completedSection}>
           <Pressable
             style={styles.completedHeader}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsCompletedCollapsed(!isCompletedCollapsed);
-            }}
+            onPress={() => setIsCompletedCollapsed(!isCompletedCollapsed)}
           >
             <Text style={styles.completedHeaderText}>
               Completed ({completedHabits.length})
@@ -277,7 +371,7 @@ export default function App() {
           {!isCompletedCollapsed && (
             <View style={[styles.grid, { opacity: 0.8 }]}>
               {completedHabits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} />
+                <HabitCard key={habit.id} habit={habit} isGrid={isGrid} />
               ))}
             </View>
           )}

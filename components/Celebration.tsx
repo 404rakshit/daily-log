@@ -12,6 +12,8 @@ import Animated, {
 } from "react-native-reanimated";
 import useLogStore from "../store/logState";
 
+import LottieView from "lottie-react-native";
+
 const { width, height } = Dimensions.get("window");
 
 export const CelebrationOverlay = () => {
@@ -83,12 +85,21 @@ export const CelebrationOverlay = () => {
         <View style={styles.content} pointerEvents="none">
           {/* THE MASTER BOUNCE WRAPPER */}
           <Animated.View style={[styles.jumpWrapper, charStyle]}>
-            {/* HURRAY TEXT (Scales independently, but jumps with the group) */}
+            {/* MOVED: Lottie is now inside the wrapper so it jumps with the character */}
+            <View style={styles.lottieContainer}>
+              <LottieView
+                source={require("../assets/reward-light-effect.json")}
+                autoPlay
+                loop
+                style={styles.lottieLight}
+                resizeMode="cover"
+              />
+            </View>
+
             <Animated.View style={[styles.hurrayTextWrapper, textStyle]}>
               <Text style={styles.hurrayText}>HURRAY!</Text>
             </Animated.View>
 
-            {/* CHARACTER */}
             <View style={styles.character}>
               <Text style={styles.characterEmoji}>
                 {celebrationEvent.emoji}
@@ -170,5 +181,16 @@ const styles = StyleSheet.create({
     top: -20, // Perfectly rests the hands on top of the emoji
     right: -10,
     transform: [{ rotate: "15deg" }], // Adds a little celebratory tilt
+  },
+  lottieContainer: {
+    position: "absolute", // Anchors it directly to the center of the jumpWrapper
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: -1, // Ensures it stays strictly behind the emoji and text
+  },
+  lottieLight: {
+    width: width * 1.5, // Massively scaled to fill the background
+    height: width * 1.5,
+    opacity: 0.8, // Slight transparency so it blends with the colored background
   },
 });
