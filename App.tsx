@@ -17,6 +17,9 @@ import HabitCard from "./components/HabitCard";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Habit } from "./types";
 import DebugDatabase from "./components/debug/DatabaseDebugPanel";
+import { setupLocalNotifications } from "./helper/notifications";
+
+import * as Notifications from "expo-notifications";
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -48,6 +51,37 @@ export default function App() {
     initDB();
     loadHabits();
     setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    // 1. Initialize permissions and Android channels on boot
+    setupLocalNotifications();
+
+    // 2. Listener: When a notification fires while the app is OPEN
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log(
+          "🔔 Notification received in foreground!",
+          notification.request.content.title,
+        );
+      },
+    );
+
+    // 3. Listener: When the user TAPS the notification banner
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const tappedHabitId =
+          response.notification.request.content.data.habitId;
+        console.log(
+          `🚀 User tapped notification for Habit ID: ${tappedHabitId}`,
+        );
+      });
+
+    // 🔥 THE FIX: Call .remove() directly on the subscription objects
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
   }, []);
 
   const handleOnboardingComplete = (selectedPresets: any[]) => {

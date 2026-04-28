@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { scheduleHabitReminders } from "./helper/notifications";
 
 // --- 1. LOCAL DATABASE LAYER ---
 const db = SQLite.openDatabaseSync("dailylog.db");
@@ -45,17 +46,36 @@ const initDB = () => {
 
 export const createHabitTransaction = async (payload: any) => {
   try {
-    // withTransactionAsync ensures all queries succeed, or none of them do.
     await db.withTransactionAsync(async () => {
-      // 1. INSERT CORE HABIT
+      // 1. INSERT CORE HABIT FIRST (Leave notification_ids null for exactly one millisecond)
       const habitResult = await db.runAsync(
         `INSERT INTO habits (title, emoji, color, daily_target) VALUES (?, ?, ?, ?);`,
         [payload.title, payload.emoji, payload.color, payload.dailyTarget],
       );
 
+      // BOOM: We now have our database-generated ID!
       const newHabitId = habitResult.lastInsertRowId;
 
-      // 2. INSERT SCHEDULE
+      // 2. NOW SCHEDULE THE NOTIFICATIONS (Passing the newHabitId as the 1st argument)
+      const scheduledIds = await scheduleHabitReminders(
+        newHabitId, // <-- We now have the 6th argument!
+        payload.title,
+        payload.emoji,
+        payload.schedule.frequencyType,
+        payload.schedule.daysOfWeek,
+        payload.reminders,
+      );
+
+      // 3. UPDATE THE HABIT ROW TO SAVE THE EXPO IDS
+      if (scheduledIds.length > 0) {
+        const idsString = scheduledIds.join(",");
+        await db.runAsync(
+          `UPDATE habits SET notification_ids = ? WHERE id = ?;`,
+          [idsString, newHabitId],
+        );
+      }
+
+      // 4. INSERT SCHEDULE
       await db.runAsync(
         `INSERT INTO habit_schedules (habit_id, frequency_type, days_of_week) VALUES (?, ?, ?);`,
         [
@@ -65,7 +85,7 @@ export const createHabitTransaction = async (payload: any) => {
         ],
       );
 
-      // 3. INSERT REMINDERS (Loop through the array)
+      // 5. INSERT REMINDERS
       if (payload.reminders && payload.reminders.length > 0) {
         for (const time of payload.reminders) {
           await db.runAsync(
@@ -75,16 +95,17 @@ export const createHabitTransaction = async (payload: any) => {
         }
       }
 
-      console.log(`✅ Habit created successfully with ID: ${newHabitId}`);
+      console.log(
+        `✅ Habit created and scheduled successfully with ID: ${newHabitId}`,
+      );
     });
 
-    return true; // Success!
+    return true;
   } catch (error) {
     console.error("❌ Failed to create habit transaction:", error);
-    return false; // Tells the UI the save failed
+    return false;
   }
 };
-
 // db.ts
 export const deleteHabit = async (habitId: number) => {
   try {
