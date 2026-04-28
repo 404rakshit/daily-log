@@ -17,6 +17,7 @@ const initDB = () => {
       color TEXT,
       daily_target INTEGER DEFAULT 1,
       streak INTEGER DEFAULT 0,
+      notification_ids TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 

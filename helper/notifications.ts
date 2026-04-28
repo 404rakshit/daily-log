@@ -40,9 +40,9 @@ export async function setupLocalNotifications() {
   return true;
 }
 
-// 3. THE LOCAL SCHEDULING ENGINE
+// 3. THE LOCAL SCHEDULING ENGINE (Cross-Platform Safe)
 export async function scheduleHabitReminders(
-  habitId: number, // We pass the ID now so the notification knows which habit it belongs to
+  habitId: number,
   title: string,
   emoji: string,
   frequencyType: string,
@@ -60,28 +60,29 @@ export async function scheduleHabitReminders(
       title: `${emoji} Time to ${title}!`,
       body: `Tap to mark it as complete.`,
       sound: true,
-      data: { habitId }, // Hidden data payload!
+      data: { habitId },
     };
 
     if (frequencyType === "DAILY") {
       const id = await Notifications.scheduleNotificationAsync({
         content,
+        // 🔥 FIX: Removed 'type' so Expo auto-infers DailyTrigger for both iOS/Android
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           hour,
           minute,
           repeats: true,
-          channelId: "habit-reminders", // Map to Android channel
+          channelId: "habit-reminders",
         },
       });
       scheduledIds.push(id);
     } else if (frequencyType === "SPECIFIC_DAYS" && daysOfWeek) {
       const days = daysOfWeek.split(",").map(Number);
       for (const day of days) {
+        // Expo's weekday: 1 = Sunday, 7 = Saturday.
         const id = await Notifications.scheduleNotificationAsync({
           content,
+          // 🔥 FIX: Removed 'type' so Expo auto-infers WeeklyTrigger
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
             weekday: day + 1,
             hour,
             minute,

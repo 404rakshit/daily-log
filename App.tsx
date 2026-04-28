@@ -20,6 +20,8 @@ import DebugDatabase from "./components/debug/DatabaseDebugPanel";
 import { setupLocalNotifications } from "./helper/notifications";
 
 import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import OnboardingScreen from "./components/Onboarding";
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -27,10 +29,53 @@ export default function App() {
 
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null); // NEW: Holds the habit being edited
 
-  const openCreateModal = () => {
-    setEditingHabit(null); // Ensures it opens blank
-    setModalVisible(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // 1. Check storage on boot
+  useEffect(() => {
+    async function checkOnboarding() {
+      try {
+        const hasSeen = await AsyncStorage.getItem("@has_seen_onboarding");
+        if (hasSeen !== "true") {
+          setShowOnboarding(true);
+        }
+      } catch (e) {
+        console.error("Failed to check onboarding status", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkOnboarding();
+  }, []);
+
+  // 2. Handle Onboarding Completion
+  const finishOnboarding = async (presetsToCreate: any) => {
+    // Save flag so they never see it again natively
+    await AsyncStorage.setItem("@has_seen_onboarding", "true");
+
+    // Save selected presets to DB
+    for (const preset of presetsToCreate) {
+      await createHabitTransaction({
+        title: preset.title,
+        emoji: preset.emoji,
+        color: preset.color,
+        dailyTarget: preset.dailyTarget,
+        schedule: { frequencyType: "DAILY", daysOfWeek: null },
+        reminders: [], // No reminders by default for presets
+      });
+    }
+
+    // Hide onboarding and fetch fresh data
+    setShowOnboarding(false);
+    refreshHabits(); // Call your Zustand fetch function here!
   };
+
+  // 3. The manual trigger (For your Settings menu)
+  // const triggerOnboardingManually = async () => {
+  //   await AsyncStorage.removeItem("@has_seen_onboarding");
+  //   setShowOnboarding(true);
+  // };
 
   const openEditModal = (habit: Habit) => {
     setEditingHabit(habit); // Fills it with data
@@ -84,23 +129,13 @@ export default function App() {
     };
   }, []);
 
-  const handleOnboardingComplete = (selectedPresets: any[]) => {
-    selectedPresets.forEach((preset) => {
-      db.runSync(
-        "INSERT INTO habits (title, emoji, color, daily_target) VALUES (?, ?, ?, ?)",
-        preset.title,
-        preset.emoji,
-        preset.color,
-        preset.target,
-      );
-    });
-    loadHabits();
-  };
-
   if (!isReady) return null;
 
-  if (habits.length === 0) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+  if (isLoading) return null; // Or a splash screen
+
+  // 4. Conditional Rendering
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={finishOnboarding} />;
   }
 
   const today = new Date().toLocaleDateString("en-US", {
