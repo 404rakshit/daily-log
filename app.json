@@ -31,7 +31,8 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

@@ -454,4 +454,15 @@ export const styles = StyleSheet.create({
     lineHeight: 22,
     paddingHorizontal: 20,
   },
+  safeArea: {
+    flex: 1, 
+    backgroundColor: "#0f172a", // Your dark background color
+  },
+  scrollContainer: {
+    flex: 1, // Tells the ScrollView to fill the SafeArea
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
+  },
 });
