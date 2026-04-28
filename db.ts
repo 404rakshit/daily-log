@@ -97,4 +97,52 @@ export const deleteHabit = async (habitId: number) => {
   }
 };
 
+// db.ts
+export const updateHabitTransaction = async (habitId: number, payload: any) => {
+  try {
+    await db.withTransactionAsync(async () => {
+      // 1. UPDATE CORE HABIT
+      await db.runAsync(
+        `UPDATE habits SET title = ?, emoji = ?, color = ?, daily_target = ? WHERE id = ?;`,
+        [
+          payload.title,
+          payload.emoji,
+          payload.color,
+          payload.dailyTarget,
+          habitId,
+        ],
+      );
+
+      // 2. WIPE EXISTING SCHEDULES & REMINDERS
+      await db.runAsync(`DELETE FROM habit_schedules WHERE habit_id = ?;`, [
+        habitId,
+      ]);
+      await db.runAsync(`DELETE FROM habit_reminders WHERE habit_id = ?;`, [
+        habitId,
+      ]);
+
+      // 3. RE-INSERT NEW SCHEDULE
+      await db.runAsync(
+        `INSERT INTO habit_schedules (habit_id, frequency_type, days_of_week) VALUES (?, ?, ?);`,
+        [habitId, payload.schedule.frequencyType, payload.schedule.daysOfWeek],
+      );
+
+      // 4. RE-INSERT NEW REMINDERS
+      if (payload.reminders && payload.reminders.length > 0) {
+        for (const time of payload.reminders) {
+          await db.runAsync(
+            `INSERT INTO habit_reminders (habit_id, time_of_day) VALUES (?, ?);`,
+            [habitId, time],
+          );
+        }
+      }
+      console.log(`✅ Habit ${habitId} updated successfully.`);
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ Failed to update habit:", error);
+    return false;
+  }
+};
+
 export { initDB, db };

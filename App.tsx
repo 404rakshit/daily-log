@@ -4,21 +4,43 @@ import * as Haptics from "expo-haptics";
 import Onboarding from "./components/Onboarding";
 import { styles } from "./styles";
 import useLogStore from "./store/logState";
-import { createHabitTransaction, db, initDB } from "./db";
+import {
+  createHabitTransaction,
+  db,
+  initDB,
+  updateHabitTransaction,
+} from "./db";
 import { CelebrationOverlay } from "./components/Celebration";
 import EmptyView from "./components/EmptyView";
 import CreateHabitModal from "./components/CreationHabitModal";
 import HabitCard from "./components/HabitCard";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { Habit } from "./types";
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null); // NEW: Holds the habit being edited
+
+  const openCreateModal = () => {
+    setEditingHabit(null); // Ensures it opens blank
+    setModalVisible(true);
+  };
+
+  const openEditModal = (habit: Habit) => {
+    setEditingHabit(habit); // Fills it with data
+    setModalVisible(true);
+  };
+
   const { habits, loadHabits } = useLogStore();
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(false);
 
   const [isGrid, setIsGrid] = useState(true);
+
+  const refreshHabits = () => {
+    loadHabits();
+  };
 
   useEffect(() => {
     // nukeDB()
@@ -111,7 +133,12 @@ export default function App() {
           ) : (
             <View style={styles.grid}>
               {ongoingHabits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} isGrid={isGrid} />
+                <HabitCard
+                  key={habit.id}
+                  habit={habit}
+                  isGrid={isGrid}
+                  onEdit={openEditModal}
+                />
               ))}
             </View>
           )}
@@ -134,7 +161,12 @@ export default function App() {
               {!isCompletedCollapsed && (
                 <View style={[styles.grid, { opacity: 0.8 }]}>
                   {completedHabits.map((habit) => (
-                    <HabitCard key={habit.id} habit={habit} isGrid={isGrid} />
+                    <HabitCard
+                      key={habit.id}
+                      habit={habit}
+                      isGrid={isGrid}
+                      onEdit={openEditModal} // <--- Pass it down here
+                    />
                   ))}
                 </View>
               )}
@@ -147,6 +179,7 @@ export default function App() {
           style={styles.fab}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setEditingHabit(null)
             setModalVisible(true);
           }}
         >
@@ -154,19 +187,22 @@ export default function App() {
         </Pressable>
         <CreateHabitModal
           visible={modalVisible}
+          initialData={editingHabit} // Passes the data in
           onClose={() => setModalVisible(false)}
           onSave={async (payload) => {
-            // 1. Run the safe transaction
-            const success = await createHabitTransaction(payload);
+            let success;
+
+            if (editingHabit) {
+              // WE ARE EDITING
+              success = await updateHabitTransaction(editingHabit.id, payload);
+            } else {
+              // WE ARE CREATING
+              success = await createHabitTransaction(payload);
+            }
 
             if (success) {
-              // 2. Close the modal
               setModalVisible(false);
-              loadHabits();
-            } else {
-              alert(
-                "Something went wrong saving your habit. Please try again.",
-              );
+              refreshHabits();
             }
           }}
         />

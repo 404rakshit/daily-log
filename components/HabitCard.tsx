@@ -16,7 +16,15 @@ import { deleteHabit } from "../db";
 // --- 3. UI COMPONENTS ---
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
+const HabitCard = ({
+  habit,
+  isGrid,
+  onEdit
+}: {
+  habit: Habit;
+  isGrid: boolean;
+  onEdit: (habit: Habit) => void;
+}) => {
   const { logWin, undoWin, recentlyCompleted } = useLogStore();
   const scale = useSharedValue(1);
 
@@ -56,24 +64,26 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
   const refreshHabits = useLogStore((state) => state.loadHabits);
 
   const handleLongPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // A deep, satisfying thud
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     Alert.alert(
-      "Delete Habit",
-      `Are you sure you want to permanently delete "${habit.title}"?`,
+      "Manage Habit", // Changed title
+      `What would you like to do with "${habit.title}"?`,
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
+          text: "Edit",
+          onPress: () => onEdit(habit), // Triggers the modal to open
+        },
+        {
           text: "Delete",
-          style: "destructive", // This turns the button red natively on iOS!
+          style: "destructive",
           onPress: async () => {
             const success = await deleteHabit(habit.id);
-            if (success) {
-              refreshHabits(); // Instantly removes it from the dashboard
-            }
+            if (success) refreshHabits();
           },
         },
       ],
@@ -92,7 +102,12 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
     <View style={isGrid ? styles.cardWrapperGrid : styles.cardWrapperList}>
       {/* THE SHOCKWAVE RING */}
       <Animated.View
-        style={[styles.pulseRing, { borderColor: habit.color }, pulseStyle, deleteOverlayStyle]}
+        style={[
+          styles.pulseRing,
+          { borderColor: habit.color },
+          pulseStyle,
+          deleteOverlayStyle,
+        ]}
         pointerEvents="none"
       />
 
@@ -116,7 +131,7 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
         delayLongPress={500}
         style={[
           styles.cardBase,
-          { overflow: 'hidden' }, // Shared base styles (colors, shadows, corners)
+          { overflow: "hidden" }, // Shared base styles (colors, shadows, corners)
           isGrid ? styles.cardGrid : styles.cardList, // Explicit layout split
           isGrid
             ? { borderTopColor: habit.color }
@@ -124,9 +139,13 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
           isDone && !isRecent && styles.cardDone,
         ]}
       >
-        <Animated.View 
-          style={[StyleSheet.absoluteFillObject, { backgroundColor: '#ef4444' }, deleteOverlayStyle]} 
-          pointerEvents="none" 
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            { backgroundColor: "#ef4444" },
+            deleteOverlayStyle,
+          ]}
+          pointerEvents="none"
         />
         {isGrid ? (
           // --- GRID VIEW INTERNAL LAYOUT (Keep your existing grid layout here) ---

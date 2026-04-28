@@ -33,12 +33,14 @@ interface CreateHabitModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (habitData: any) => void; // We will type this properly when wiring the DB
+  initialData?: any;
 }
 
 export default function CreateHabitModal({
   visible,
   onClose,
   onSave,
+  initialData
 }: CreateHabitModalProps) {
   // --- CORE STATE ---
   const [title, setTitle] = useState("");
@@ -57,9 +59,27 @@ export default function CreateHabitModal({
   const [pickerDate, setPickerDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
-  // (In a real app, you'd use @react-native-community/datetimepicker here.
-  // For the MVP UI, we use a simple text input for HH:MM to keep it dependency-free)
-  const [tempTime, setTempTime] = useState("");
+  React.useEffect(() => {
+    if (visible && initialData) {
+      setTitle(initialData.title);
+      setEmoji(initialData.emoji);
+      setColor(initialData.color);
+      setDailyTarget(initialData.daily_target || 1);
+
+      // Populate Schedule
+      const isFreqDaily = initialData.frequency_type === "DAILY";
+      setIsDaily(isFreqDaily);
+      if (!isFreqDaily && initialData.days_of_week) {
+        setSelectedDays(initialData.days_of_week.split(",").map(Number));
+      }
+
+      // Populate Reminders (Assuming your UI passes them in as an array of strings)
+      setReminders(initialData.reminders || []);
+    } else if (visible && !initialData) {
+      // If opening in Create Mode, ensure form is completely blank
+      resetForm();
+    }
+  }, [visible, initialData]);
 
   // --- NEW PLATFORM-AWARE TIME HANDLERS ---
   const handleTimeChange = (event: any, selectedDate?: Date) => {
@@ -99,22 +119,6 @@ export default function CreateHabitModal({
     setShowPicker(false);
   };
 
-  const confirmAndAddReminder = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Extract the HH:MM format in 24h or 12h format safely
-    const hours = pickerDate.getHours().toString().padStart(2, "0");
-    const minutes = pickerDate.getMinutes().toString().padStart(2, "0");
-    const formattedTime = `${hours}:${minutes}`;
-
-    if (!reminders.includes(formattedTime)) {
-      setReminders([...reminders, formattedTime]);
-    }
-
-    // Close picker on iOS after adding
-    if (Platform.OS === "ios") setShowPicker(false);
-  };
-
   // --- HANDLERS ---
   const toggleDay = (dayValue: number) => {
     Haptics.selectionAsync();
@@ -123,14 +127,6 @@ export default function CreateHabitModal({
         ? prev.filter((d) => d !== dayValue)
         : [...prev, dayValue],
     );
-  };
-
-  const addReminder = () => {
-    if (tempTime.length === 5 && tempTime.includes(":")) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setReminders([...reminders, tempTime]);
-      setTempTime("");
-    }
   };
 
   const handleSave = () => {
@@ -150,7 +146,7 @@ export default function CreateHabitModal({
     };
 
     onSave(newHabitPayload);
-    resetForm();
+    // resetForm();
   };
 
   const resetForm = () => {
