@@ -83,4 +83,18 @@ export const createHabitTransaction = async (payload: any) => {
   }
 };
 
+// db.ts
+export const deleteHabit = async (habitId: number) => {
+  try {
+    // Because of 'ON DELETE CASCADE' in our schema, this single query
+    // safely wipes the habit AND its schedules AND its reminders automatically!
+    await db.runAsync(`DELETE FROM habits WHERE id = ?;`, [habitId]);
+    console.log(`🗑️ Habit ${habitId} permanently deleted.`);
+    return true;
+  } catch (error) {
+    console.error("❌ Failed to delete habit:", error);
+    return false;
+  }
+};
+
 export { initDB, db };

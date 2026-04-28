@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Alert, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +11,7 @@ import Animated, {
 import { styles } from "../styles";
 import { Habit } from "../types";
 import useLogStore from "../store/logState";
+import { deleteHabit } from "../db";
 
 // --- 3. UI COMPONENTS ---
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -51,11 +53,46 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
   // Ensure boxes max out at 10 to protect UI
   const visualBoxesCount = Math.min(habit.daily_target, 10);
 
+  const refreshHabits = useLogStore((state) => state.loadHabits);
+
+  const handleLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // A deep, satisfying thud
+
+    Alert.alert(
+      "Delete Habit",
+      `Are you sure you want to permanently delete "${habit.title}"?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive", // This turns the button red natively on iOS!
+          onPress: async () => {
+            const success = await deleteHabit(habit.id);
+            if (success) {
+              refreshHabits(); // Instantly removes it from the dashboard
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const deleteProgress = useSharedValue(0);
+
+  // NEW: Animates an overlay opacity up to 30% red
+  const deleteOverlayStyle = useAnimatedStyle(() => ({
+    opacity: deleteProgress.value * 0.3, // Caps the red tint at 30% so it's subtle
+  }));
+
   return (
     <View style={isGrid ? styles.cardWrapperGrid : styles.cardWrapperList}>
       {/* THE SHOCKWAVE RING */}
       <Animated.View
-        style={[styles.pulseRing, { borderColor: habit.color }, pulseStyle]}
+        style={[styles.pulseRing, { borderColor: habit.color }, pulseStyle, deleteOverlayStyle]}
         pointerEvents="none"
       />
 
@@ -63,16 +100,23 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
         onPressIn={() => {
           if (!isDone)
             scale.value = withSpring(0.92, { damping: 12, stiffness: 300 });
+          // NEW: Start the 500ms red fade the moment they touch it
+          deleteProgress.value = withTiming(1, { duration: 500 });
         }}
         onPressOut={() => {
           if (!isDone)
             scale.value = withSpring(1, { damping: 10, stiffness: 200 });
+          // NEW: If they let go, instantly drain the red color
+          deleteProgress.value = withTiming(0, { duration: 150 });
         }}
-        onPress={() => {
-          if (!isDone) logWin(habit);
-        }}
+        // onPress={() => {
+        //   if (!isDone) logWin(habit);
+        // }}
+        onLongPress={handleLongPress}
+        delayLongPress={500}
         style={[
-          styles.cardBase, // Shared base styles (colors, shadows, corners)
+          styles.cardBase,
+          { overflow: 'hidden' }, // Shared base styles (colors, shadows, corners)
           isGrid ? styles.cardGrid : styles.cardList, // Explicit layout split
           isGrid
             ? { borderTopColor: habit.color }
@@ -80,6 +124,10 @@ const HabitCard = ({ habit, isGrid }: { habit: Habit; isGrid: boolean }) => {
           isDone && !isRecent && styles.cardDone,
         ]}
       >
+        <Animated.View 
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: '#ef4444' }, deleteOverlayStyle]} 
+          pointerEvents="none" 
+        />
         {isGrid ? (
           // --- GRID VIEW INTERNAL LAYOUT (Keep your existing grid layout here) ---
           <>
