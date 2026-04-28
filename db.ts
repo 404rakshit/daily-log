@@ -3,6 +3,8 @@ import * as SQLite from "expo-sqlite";
 // --- 1. LOCAL DATABASE LAYER ---
 const db = SQLite.openDatabaseSync("dailylog.db");
 
+db.execSync("PRAGMA foreign_keys = ON;");
+
 const initDB = () => {
   // NUKE OLD TABLES FOR THIS SCHEMA UPGRADE
   db.execSync(`

@@ -16,6 +16,7 @@ import CreateHabitModal from "./components/CreationHabitModal";
 import HabitCard from "./components/HabitCard";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Habit } from "./types";
+import DebugDatabase from "./components/debug/DatabaseDebugPanel";
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -125,6 +126,8 @@ export default function App() {
                 daily targets. Keep pushing.
               </Text>
             </View>
+
+            <DebugDatabase />
           </View>
 
           {/* ONGOING SECTION */}
@@ -179,7 +182,7 @@ export default function App() {
           style={styles.fab}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setEditingHabit(null)
+            setEditingHabit(null);
             setModalVisible(true);
           }}
         >
