@@ -206,7 +206,7 @@ export default function App() {
             <View style={styles.grid}>
               {ongoingHabits.map((habit) => (
                 <HabitCard
-                  key={habit.id}
+                  key={`${habit.id}-${isGrid ? 'grid' : 'list'}`}
                   habit={habit}
                   isGrid={isGrid}
                   onEdit={openEditModal}
@@ -234,7 +234,7 @@ export default function App() {
                 <View style={[styles.grid, { opacity: 0.8 }]}>
                   {completedHabits.map((habit) => (
                     <HabitCard
-                      key={habit.id}
+                      key={`${habit.id}-${isGrid ? "grid" : "list"}`}
                       habit={habit}
                       isGrid={isGrid}
                       onEdit={openEditModal} // <--- Pass it down here
