@@ -3,28 +3,37 @@ import { Platform } from "react-native";
 
 // 1. FOREGROUND BEHAVIOR
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true, // Replaces shouldShowBanner
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: false,
-    shouldShowList: false,
-  }),
+  handleNotification:
+    async (): Promise<Notifications.NotificationBehavior> => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
 });
 
 // 2. SETUP & PERMISSIONS (No Expo Push Tokens needed!)
 export async function setupLocalNotifications() {
-  // A. Set up the Android Channel (Required for Android 8.0+)
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("habit-reminders", {
       name: "Habit Reminders",
-      importance: Notifications.AndroidImportance.MAX,
+      importance: Notifications.AndroidImportance.MAX, // High priority
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#3b82f6", // Your brand color
+      lightColor: "#3b82f6",
+      sound: "classic-alarm.wav",
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: true, // Optional: Allows alarm to ring during DND
     });
+
+    // CRITICAL: Check for Exact Alarm permission on Android 13+
+    const { status: exactAlarmStatus } =
+      await Notifications.getPermissionsAsync();
+    if (exactAlarmStatus !== "granted") {
+      await Notifications.requestPermissionsAsync();
+    }
   }
 
-  // B. Request Local Permissions
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -33,14 +42,9 @@ export async function setupLocalNotifications() {
     finalStatus = status;
   }
 
-  if (finalStatus !== "granted") {
-    console.warn("Failed to get permissions for local notifications!");
-    return false;
-  }
-  return true;
+  return finalStatus === "granted";
 }
 
-// 3. THE LOCAL SCHEDULING ENGINE (Cross-Platform Safe)
 export async function scheduleHabitReminders(
   habitId: number,
   title: string,
@@ -56,38 +60,42 @@ export async function scheduleHabitReminders(
     const hour = parseInt(hourStr, 10);
     const minute = parseInt(minuteStr, 10);
 
-    const content = {
+    const content: Notifications.NotificationContentInput = {
       title: `${emoji} Time to ${title}!`,
       body: `Tap to mark it as complete.`,
       sound: true,
       data: { habitId },
+      // android: {
+      //   channelId: "habit-reminders",
+      //   // Ensures the notification appears as a "Heads-up" alarm
+      //   priority: Notifications.AndroidNotificationPriority.MAX,
+      // },
     };
 
     if (frequencyType === "DAILY") {
       const id = await Notifications.scheduleNotificationAsync({
         content,
-        // 🔥 FIX: Removed 'type' so Expo auto-infers DailyTrigger for both iOS/Android
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY, // Works reliably on both
           hour,
           minute,
-          repeats: true,
-          channelId: "habit-reminders",
         },
       });
       scheduledIds.push(id);
     } else if (frequencyType === "SPECIFIC_DAYS" && daysOfWeek) {
       const days = daysOfWeek.split(",").map(Number);
+
       for (const day of days) {
-        // Expo's weekday: 1 = Sunday, 7 = Saturday.
+        // iOS: Weekday 1 is Sunday. Android: Weekday 1 is Sunday.
+        // We use CALENDAR type for both, but note the Android limitation below.
         const id = await Notifications.scheduleNotificationAsync({
           content,
-          // 🔥 FIX: Removed 'type' so Expo auto-infers WeeklyTrigger
           trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
             weekday: day + 1,
             hour,
             minute,
             repeats: true,
-            channelId: "habit-reminders",
           },
         });
         scheduledIds.push(id);
@@ -97,9 +105,13 @@ export async function scheduleHabitReminders(
   return scheduledIds;
 }
 
-// 4. CLEANUP
 export async function cancelHabitNotifications(notificationIds: string[]) {
+  if (!notificationIds) return;
   for (const id of notificationIds) {
-    await Notifications.cancelScheduledNotificationAsync(id);
+    try {
+      await Notifications.cancelScheduledNotificationAsync(id);
+    } catch (e) {
+      console.error("Failed to cancel:", id);
+    }
   }
 }
